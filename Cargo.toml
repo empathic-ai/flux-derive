@@ -1,0 +1,15 @@
+[package]
+name = "flux_derive"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+proc-macro = true
+
+[dependencies]
+flux_core = { git = "https://github.com/empathic-ai/flux-core.git", default-features = false }
+syn = { version = "2.0.39", features = ["full"] }
+quote = "1.0.33"
+derive-syn-parse = "0.1.5"
