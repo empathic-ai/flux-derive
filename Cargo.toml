@@ -9,7 +9,9 @@ edition = "2021"
 proc-macro = true
 
 [dependencies]
-flux_core = { git = "https://github.com/empathic-ai/flux-core.git", default-features = false }
+flux_core = { git = "https://github.com/empathic-ai/flux-core.git" }
 syn = { version = "2.0.39", features = ["full"] }
 quote = "1.0.33"
 derive-syn-parse = "0.1.5"
+proc-macro-crate = "3.2.0"
+proc-macro2 = "1.0.92"
