@@ -28,9 +28,9 @@ pub fn task(input: TokenStream) -> TokenStream {
 
     // Build the impl
     let name = &ast.ident;
-    let gen = quote! {
+    let quote = quote! {
         impl #path for #name {
         }
     };
-    TokenStream::from(gen)
+    TokenStream::from(quote)
 }
