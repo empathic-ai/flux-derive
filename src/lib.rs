@@ -18,18 +18,21 @@ pub fn task(input: TokenStream) -> TokenStream {
     // Determine the correct path to the ragent crate
     let found_crate = crate_name("flux").expect("flux is not found in Cargo.toml");
 
-    let path = match found_crate {
-        FoundCrate::Itself => quote!(crate::prelude::Reactive),
-        FoundCrate::Name(crate_name) => {
-            let ident = syn::Ident::new(&crate_name, proc_macro2::Span::call_site());
-            quote!(::#ident::prelude::Reactive)
+    let prelude = match found_crate {
+        FoundCrate::Itself => quote!(crate::prelude),
+        FoundCrate::Name(ref flux_name) => {
+            let ident = syn::Ident::new(flux_name, proc_macro2::Span::call_site());
+            quote!(::#ident::prelude)
         }
     };
 
     // Build the impl
     let name = &ast.ident;
     let quote = quote! {
-        impl #path for #name {
+
+        #prelude::enable_global_type_registration!(#name);
+
+        impl #prelude::Reactive for #name {
         }
     };
     TokenStream::from(quote)
