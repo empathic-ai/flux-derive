@@ -1,21 +1,14 @@
-extern crate proc_macro;
-extern crate syn;
-#[macro_use]
-extern crate quote;
-extern crate proc_macro_crate;
-
 use proc_macro::TokenStream;
-use proc_macro_crate::{crate_name, FoundCrate};
+use proc_macro_crate::{FoundCrate, crate_name};
+use quote::quote;
 
 #[proc_macro_derive(Reactive)]
 pub fn task(input: TokenStream) -> TokenStream {
-    // Construct a string representation of the type definition
-    let s = input.to_string();
-    
-    // Parse the string representation
-    let ast: syn::DeriveInput = syn::parse_str(&s).unwrap();
+    // Parse tokens directly to preserve spans in compiler diagnostics.
+    let ast = syn::parse_macro_input!(input as syn::DeriveInput);
 
-    // Determine the correct path to the ragent crate
+    // Resolve renamed dependencies in the consuming crate; the macro itself
+    // does not need to link Flux or Bevy at build time.
     let found_crate = crate_name("flux").expect("flux is not found in Cargo.toml");
 
     let prelude = match found_crate {
