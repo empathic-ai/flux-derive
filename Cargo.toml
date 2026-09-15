@@ -9,8 +9,8 @@ edition = "2024"
 proc-macro = true
 
 [dependencies]
-# DeriveInput uses Syn's default derive/parsing support; full Rust syntax is unnecessary.
-syn = "2.0.39"
+# Binding pipelines parse Rust entity expressions, closures, and typed field paths.
+syn = { version = "2.0.39", features = ["full"] }
 quote = "1.0.33"
 proc-macro-crate = "3.2.0"
 proc-macro2 = "1.0.92"
