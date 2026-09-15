@@ -17,11 +17,11 @@ normal Rust field accesses in closures that are type-checked but never called:
 no component instance, query, or record is created to validate a path.
 
 ```rust,ignore
-binding_path!(entity, Model.number)                  // Result<BindingPath>
+path!(entity, Model.number)                  // Result<TypedBindingPath<i32>> (if number: i32)
 component_path!(Control.is_visible)                  // Result<ComponentBindingPath>
 property_path!(Device.wifi_configs[0].ssid)           // String, root omitted
-binding_path!(entity, View.device_id -> Device.name)  // Id entity jump
-binding_path!(entity, ReactiveView.value as WifiConfig.ssid) // dynamic shape
+path!(entity, View.device_id -> Device.name)  // Id entity jump
+path!(entity, ReactiveView.value as WifiConfig.ssid) // dynamic shape
 ```
 
 Use `?` in a field chain to type-check access through an Option:
@@ -35,6 +35,11 @@ value is `Id` or `Option<Id>`. For a dynamic value containing an Id, spell that
 shape explicitly: `ReactiveView.value as Id -> Device.wifi_configs`.
 `as Type` checks subsequent fields against Type but appends no type name. It
 neither performs a cast nor proves the actual runtime dynamic shape.
+
+The macro preserves the final field type in `TypedBindingPath<T>`.
+`process` / `process_system` preserve their output in `BindingExpr<T>`, and
+`commands.set_property(path!(entity, Model.number), 42)` checks the
+value type at compile time. Use `.erase()` for explicitly dynamic APIs.
 
 Root and jump component names come from Bevy TypePath, not the textual spelling
 of an import or type alias. Ordinary fields obey Rust visibility and type rules;

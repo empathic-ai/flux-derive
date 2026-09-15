@@ -41,9 +41,9 @@ pub fn property_path(input: TokenStream) -> TokenStream {
         .unwrap_or_else(|error| error.to_compile_error()).into()
 }
 
-/// A checked entity/component/property location returning BindingResult<BindingPath>.
+/// A checked entity/component/property location returning BindingResult<TypedBindingPath<T>>.
 #[proc_macro]
-pub fn binding_path(input: TokenStream) -> TokenStream {
+pub fn path(input: TokenStream) -> TokenStream {
     let path = syn::parse_macro_input!(input as binding::Location);
     binding::flux().map(|flux| path.expand(&flux))
         .unwrap_or_else(|error| error.to_compile_error()).into()

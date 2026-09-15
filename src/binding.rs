@@ -91,6 +91,22 @@ impl PropertyPath {
     pub fn root(&self) -> &TypePath {
         &self.segments[0].ty
     }
+    /// A never-executed projection lets Rust infer the leaf type, including
+    /// indices, Option traversal, explicit dynamic shapes, and entity jumps.
+    fn projection(&self) -> TokenStream {
+        let segment = self.segments.last().unwrap();
+        let ty = &segment.ty;
+        let mut access = quote!((*__flux_value));
+        for step in &segment.accesses {
+            access = match step {
+                Access::Field(member) => quote_spanned!(member.span()=> #access.#member),
+                Access::Index(index) => quote_spanned!(index.span()=> #access[#index]),
+                Access::Unwrap(token) => quote_spanned!(token.span()=> #access.as_ref().unwrap()),
+            };
+        }
+        quote!(|__flux_value: &#ty| { &#access })
+    }
+
     pub fn expand(&self, flux: &TokenStream, include_root: bool) -> TokenStream {
         let mut statements = Vec::new();
         for (index, segment) in self.segments.iter().enumerate() {
@@ -168,6 +184,7 @@ impl Location {
         let entity = &self.entity;
         let root = self.path.root();
         let path = self.path.expand(flux, false);
+        let projection = self.path.projection();
         quote!({
             let __flux_entity = #entity;
             let __flux_property = #path;
@@ -175,7 +192,7 @@ impl Location {
                 __flux_entity,
                 #flux::binding::__macro_support::component_name::<#root>(),
                 if __flux_property.is_empty() { None } else { Some(__flux_property.as_str()) },
-            )
+            ).map(|path| #flux::binding::TypedBindingPath::from_projection(path, #projection))
         })
     }
 }
