@@ -57,21 +57,39 @@ pub fn binding_node(input: TokenStream) -> TokenStream {
         .unwrap_or_else(|error| error.to_compile_error()).into()
 }
 
-/// A checked component/property location without an entity, for builder targets.
+/// A checked component/property location without an entity, returning
+/// BindingResult<TypedComponentBindingPath<T>>.
 #[proc_macro]
 pub fn component_path(input: TokenStream) -> TokenStream {
     let path = syn::parse_macro_input!(input as binding::PropertyPath);
-    binding::flux().map(|flux| {
-        let root = path.root();
-        let path = path.expand(&flux, false);
-        quote!({
-            let __flux_property = #path;
-            #flux::binding::ComponentBindingPath::new(
-                #flux::binding::__macro_support::component_name::<#root>(),
-                if __flux_property.is_empty() { None } else { Some(__flux_property.as_str()) },
-            )
+
+    binding::flux()
+        .map(|flux| {
+            let root = path.root();
+            let property = path.expand(&flux, false);
+            let projection = path.projection();
+
+            quote!({
+                let __flux_property = #property;
+
+                #flux::binding::ComponentBindingPath::new(
+                    #flux::binding::__macro_support::component_name::<#root>(),
+                    if __flux_property.is_empty() {
+                        None
+                    } else {
+                        Some(__flux_property.as_str())
+                    },
+                )
+                .map(|path| {
+                    #flux::binding::TypedComponentBindingPath::from_projection(
+                        path,
+                        #projection,
+                    )
+                })
+            })
         })
-    }).unwrap_or_else(|error| error.to_compile_error()).into()
+        .unwrap_or_else(|error| error.to_compile_error())
+        .into()
 }
 
 /// Creates a Bevy `HashMap` from comma-separated key/value expressions.

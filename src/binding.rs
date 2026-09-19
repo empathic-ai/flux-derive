@@ -93,7 +93,7 @@ impl PropertyPath {
     }
     /// A never-executed projection lets Rust infer the leaf type, including
     /// indices, Option traversal, explicit dynamic shapes, and entity jumps.
-    fn projection(&self) -> TokenStream {
+    pub(crate) fn projection(&self) -> TokenStream {
         let segment = self.segments.last().unwrap();
         let ty = &segment.ty;
         let mut access = quote!((*__flux_value));
