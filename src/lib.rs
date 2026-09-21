@@ -32,6 +32,8 @@ pub fn task(input: TokenStream) -> TokenStream {
 }
 
 mod binding;
+mod query;
+mod query_expr;
 
 /// A checked reflected property path, excluding the root type name.
 #[proc_macro]
@@ -55,6 +57,123 @@ pub fn binding_node(input: TokenStream) -> TokenStream {
     let pipeline = syn::parse_macro_input!(input as binding::Pipeline);
     binding::flux().map(|flux| pipeline.expand(&flux))
         .unwrap_or_else(|error| error.to_compile_error()).into()
+}
+
+/// Build a typed query expression for zero or more ECS or database records.
+///
+/// The expression can be passed to `Commands::query` for ECS execution or to
+/// `Commands::db_query` for SurrealDB execution:
+///
+/// ```ignore
+/// let expression = query!(UserRecord WHERE code = user_code);
+/// commands.query(expression, move |In(records): In<Vec<(Id, UserRecord)>>| {
+///     // Other Bevy system parameters can follow the input.
+/// });
+/// ```
+#[proc_macro]
+pub fn query(input: TokenStream) -> TokenStream {
+    let query = syn::parse_macro_input!(input as query_expr::QueryExprInput);
+    query::flux()
+        .map(|flux| query.expand(&flux, false))
+        .unwrap_or_else(|error| error.to_compile_error())
+        .into()
+}
+
+/// Build a typed query expression for zero or one ECS or database records.
+///
+/// ```ignore
+/// let expression = query_one!(UserRecord WHERE code = user_code LIMIT 1);
+/// commands.db_query_one(
+///     expression,
+///     move |In(record): In<Option<(Id, UserRecord)>>| {
+///         // Other Bevy system parameters can follow the input.
+///     },
+/// );
+/// ```
+#[proc_macro]
+pub fn query_one(input: TokenStream) -> TokenStream {
+    let query = syn::parse_macro_input!(input as query_expr::QueryExprInput);
+    query::flux()
+        .map(|flux| query.expand(&flux, true))
+        .unwrap_or_else(|error| error.to_compile_error())
+        .into()
+}
+
+/// Build an ECS-only query expression from an arbitrary typed Rust predicate.
+///
+/// ```ignore
+/// let expression = bevy_query!(UserRecord, |record: &UserRecord| {
+///     record.code.starts_with("USR-")
+/// });
+/// commands.query(expression, handler);
+/// ```
+///
+/// Structural Bevy filters can be supplied before the predicate:
+///
+/// ```ignore
+/// let expression = bevy_query!(
+///     UserRecord,
+///     (With<Active>, Without<Archived>, Changed<UserRecord>),
+///     |record: &UserRecord| record.code.starts_with("USR-")
+/// );
+/// ```
+#[proc_macro]
+pub fn bevy_query(input: TokenStream) -> TokenStream {
+    let query = syn::parse_macro_input!(input as query_expr::BevyQueryExprInput);
+    query::flux()
+        .map(|flux| query.expand(&flux, false))
+        .unwrap_or_else(|error| error.to_compile_error())
+        .into()
+}
+
+/// Build an ECS-only one-result query expression from an arbitrary typed Rust predicate.
+#[proc_macro]
+pub fn bevy_query_one(input: TokenStream) -> TokenStream {
+    let query = syn::parse_macro_input!(input as query_expr::BevyQueryExprInput);
+    query::flux()
+        .map(|flux| query.expand(&flux, true))
+        .unwrap_or_else(|error| error.to_compile_error())
+        .into()
+}
+
+/// Run a typed SurrealQL query and pass all returned records to a Bevy system.
+///
+/// ```ignore
+/// surreal_query!(
+///     commands,
+///     UserRecord,
+///     "SELECT * FROM user_record WHERE code = $code",
+///     { code: user_code },
+///     move |In(records): In<Vec<(Id, UserRecord)>>| { /* ... */ },
+/// );
+/// ```
+#[proc_macro]
+pub fn surreal_query(input: TokenStream) -> TokenStream {
+    let query = syn::parse_macro_input!(input as query::Query);
+    query::flux()
+        .map(|flux| query.expand_many(&flux))
+        .unwrap_or_else(|error| error.to_compile_error())
+        .into()
+}
+
+/// Run a typed SurrealQL query and pass its first optional record to a Bevy system.
+///
+/// ```ignore
+/// surreal_query_one!(
+///     commands,
+///     UserRecord,
+///     "SELECT * FROM user_record WHERE code = $code LIMIT 1",
+///     { code: user_code },
+///     move |In(record): In<Option<(Id, UserRecord)>>| { /* ... */ },
+/// );
+/// ```
+#[proc_macro]
+pub fn surreal_query_one(input: TokenStream) -> TokenStream {
+    let query = syn::parse_macro_input!(input as query::Query);
+    query::flux()
+        .map(|flux| query.expand_one(&flux))
+        .unwrap_or_else(|error| error.to_compile_error())
+        .into()
 }
 
 /// A checked component/property location without an entity, returning
