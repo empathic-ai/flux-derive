@@ -1,9 +1,9 @@
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::{
+    Expr, Ident, LitInt, Token, Type,
     ext::IdentExt,
     parse::{Parse, ParseStream},
-    Expr, Ident, LitInt, Token, Type,
 };
 
 #[derive(Clone, Copy)]
@@ -213,22 +213,34 @@ impl QueryExprInput {
             quote!(#flux::prelude::QueryMany)
         };
 
-        let declarations = self.conditions.iter().enumerate().map(|(index, condition)| {
-            let binding = format_ident!("__flux_query_value_{index}");
-            let value = &condition.value;
-            quote!(let #binding = (#value);)
-        });
+        let declarations = self
+            .conditions
+            .iter()
+            .enumerate()
+            .map(|(index, condition)| {
+                let binding = format_ident!("__flux_query_value_{index}");
+                let value = &condition.value;
+                quote!(let #binding = (#value);)
+            });
 
-        let variable_entries = self.conditions.iter().enumerate().map(|(index, condition)| {
-            let binding = format_ident!("__flux_query_value_{index}");
-            let field = &condition.field;
-            quote!(#field: #binding.clone())
-        });
+        let variable_entries = self
+            .conditions
+            .iter()
+            .enumerate()
+            .map(|(index, condition)| {
+                let binding = format_ident!("__flux_query_value_{index}");
+                let field = &condition.field;
+                quote!(#field: #binding.clone())
+            });
 
-        let predicates = self.conditions.iter().enumerate().map(|(index, condition)| {
-            let binding = format_ident!("__flux_query_value_{index}");
-            condition.comparison.rust_tokens(&condition.field, &binding)
-        });
+        let predicates = self
+            .conditions
+            .iter()
+            .enumerate()
+            .map(|(index, condition)| {
+                let binding = format_ident!("__flux_query_value_{index}");
+                condition.comparison.rust_tokens(&condition.field, &binding)
+            });
 
         let predicate = if predicates.len() == 0 {
             quote!(move |_record: &#record| true)
@@ -310,8 +322,8 @@ mod tests {
 
     #[test]
     fn expands_a_typed_query_expression_and_keeps_bindings_parameterized() {
-        let query: QueryExprInput = syn::parse_str("PrivateDevice WHERE code = device_code LIMIT 1")
-            .unwrap();
+        let query: QueryExprInput =
+            syn::parse_str("PrivateDevice WHERE code = device_code LIMIT 1").unwrap();
         let expanded = query.expand(&quote!(::flux), true).to_string();
 
         assert!(expanded.contains("QueryExpr"));
@@ -323,8 +335,7 @@ mod tests {
     #[test]
     fn expands_a_bevy_only_query_expression() {
         let query: BevyQueryExprInput =
-            syn::parse_str("PrivateDevice, |record: &PrivateDevice| record.code == code")
-                .unwrap();
+            syn::parse_str("PrivateDevice, |record: &PrivateDevice| record.code == code").unwrap();
         let expanded = query.expand(&quote!(::flux), false).to_string();
 
         assert!(expanded.contains("QueryExpr"));

@@ -1,10 +1,9 @@
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{
-    braced,
+    Expr, Ident, LitStr, Token, Type, braced,
     parse::{Parse, ParseStream},
     punctuated::Punctuated,
-    Expr, Ident, LitStr, Token, Type,
 };
 
 use crate::binding;

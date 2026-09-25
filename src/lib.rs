@@ -39,24 +39,30 @@ mod query_expr;
 #[proc_macro]
 pub fn property_path(input: TokenStream) -> TokenStream {
     let path = syn::parse_macro_input!(input as binding::PropertyPath);
-    binding::flux().map(|flux| path.expand(&flux, false))
-        .unwrap_or_else(|error| error.to_compile_error()).into()
+    binding::flux()
+        .map(|flux| path.expand(&flux, false))
+        .unwrap_or_else(|error| error.to_compile_error())
+        .into()
 }
 
 /// A checked entity/component/property location returning BindingResult<TypedBindingPath<T>>.
 #[proc_macro]
 pub fn path(input: TokenStream) -> TokenStream {
     let path = syn::parse_macro_input!(input as binding::Location);
-    binding::flux().map(|flux| path.expand(&flux))
-        .unwrap_or_else(|error| error.to_compile_error()).into()
+    binding::flux()
+        .map(|flux| path.expand(&flux))
+        .unwrap_or_else(|error| error.to_compile_error())
+        .into()
 }
 
 /// Compose sources, existing nodes, typed adapters, paths, and ECS systems.
 #[proc_macro]
 pub fn binding_node(input: TokenStream) -> TokenStream {
     let pipeline = syn::parse_macro_input!(input as binding::Pipeline);
-    binding::flux().map(|flux| pipeline.expand(&flux))
-        .unwrap_or_else(|error| error.to_compile_error()).into()
+    binding::flux()
+        .map(|flux| pipeline.expand(&flux))
+        .unwrap_or_else(|error| error.to_compile_error())
+        .into()
 }
 
 /// Build a typed query expression for zero or more ECS or database records.
