@@ -34,6 +34,17 @@ pub fn task(input: TokenStream) -> TokenStream {
 mod binding;
 mod query;
 mod query_expr;
+mod service;
+
+#[proc_macro_attribute]
+pub fn service(attributes: TokenStream, input: TokenStream) -> TokenStream {
+    if !attributes.is_empty() {
+        return syn::Error::new(proc_macro2::Span::call_site(), "Service attributes are not supported")
+            .to_compile_error().into();
+    }
+    let declaration = syn::parse_macro_input!(input as syn::ItemTrait);
+    service::expand(declaration).unwrap_or_else(syn::Error::into_compile_error).into()
+}
 
 /// A checked reflected property path, excluding the root type name.
 #[proc_macro]

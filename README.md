@@ -1,5 +1,13 @@
 # Flux derive macros
 
+## Service declarations
+
+`#[service]` generates a typed local client and a handler registration bundle from
+an async trait-shaped declaration. `#[system]` marks methods implemented by a
+synchronous Bevy system returning an owned `TaskResult`. See the
+[service guide](../flux/docs/services.md) for signatures and current limitations.
+The generator does not add runtime dependencies to this proc-macro crate.
+
 `Reactive` generates an implementation against the consuming crate's Flux
 prelude and registers the reflected type. Runtime behavior belongs to Flux and
 Flux Core; this proc-macro crate needs only token parsing and crate-name lookup.
